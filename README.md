@@ -21,7 +21,7 @@ Debian / Ubuntu server, root access, public IPv4. Tested only on Ubuntu.
 
 ### Install
 ```bash
-git clone https://github.com/YOUR_USERNAME/ovpn-panel.git
+git clone https://github.com/rasoulagamohammadi-wq/ovpn-panel.git
 cd ovpn-panel
 bash install.sh
 ```
@@ -72,7 +72,7 @@ MIT
 
 ### نصب
 ```bash
-git clone https://github.com/YOUR_USERNAME/ovpn-panel.git
+git clone https://github.com/rasoulagamohammadi-wq/ovpn-panel.git
 cd ovpn-panel
 bash install.sh
 ```
