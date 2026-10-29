@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>پنل OpenVPN</title>
+<style>
+:root{--bg:#eef0f8;--s1:#fff;--s2:#f5f6fc;--ink:#161a35;--mute:#6a7095;--line:#e1e4f1;--acc:#5563e6;--acc2:#8057f5;--ok:#10a36a;--bad:#e0405a;--warn:#d4860a;--sh:0 10px 34px rgba(45,55,130,.09)}
+:root[data-theme=dark]{--bg:#0b0f1e;--s1:#131933;--s2:#192041;--ink:#e9ecff;--mute:#8e96c4;--line:#252d55;--acc:#7480f7;--ok:#34d399;--bad:#fb7185;--warn:#fbbf24;--sh:0 10px 34px rgba(0,0,0,.35)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0b0f1e;--s1:#131933;--s2:#192041;--ink:#e9ecff;--mute:#8e96c4;--line:#252d55;--acc:#7480f7;--ok:#34d399;--bad:#fb7185;--warn:#fbbf24;--sh:0 10px 34px rgba(0,0,0,.35)}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+body{margin:0;min-height:100vh;color:var(--ink);font:15px/1.7 Vazirmatn,IRANSans,Tahoma,system-ui,sans-serif;
+background:radial-gradient(900px 420px at 90% -8%,color-mix(in srgb,var(--acc) 17%,transparent),transparent),radial-gradient(700px 360px at 0% 105%,color-mix(in srgb,var(--acc2) 12%,transparent),transparent),var(--bg);background-attachment:fixed}
+button,input{font:inherit;color:inherit}
+button{background:var(--s1);border:1px solid var(--line);border-radius:10px;padding:5px 14px;cursor:pointer;transition:transform .18s,border-color .2s,background .2s,box-shadow .2s}
+button:hover{border-color:var(--acc);transform:translateY(-1px)}
+button:active{transform:scale(.96)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.p{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-color:transparent;box-shadow:0 6px 18px color-mix(in srgb,var(--acc) 35%,transparent)}
+button.d{color:var(--bad)}button.d:hover{border-color:var(--bad)}
+button.solid{background:var(--bad);color:#fff;border-color:transparent}
+input{width:100%;background:var(--s2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;transition:border-color .2s,box-shadow .2s}
+input:focus{border-color:var(--acc);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 16%,transparent);outline:0}
+label{display:block;font-size:13px;color:var(--mute);margin:12px 0 3px}
+a{text-decoration:none}
+.num{direction:ltr;unicode-bidi:plaintext;text-align:right}
+
+/* header */
+.bar-top{position:sticky;top:0;z-index:5;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:color-mix(in srgb,var(--bg) 78%,transparent);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px}
+.bar-top>div{max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
+.logo{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;color:#fff;box-shadow:0 6px 16px color-mix(in srgb,var(--acc) 40%,transparent)}
+.top{display:flex;gap:6px;flex-wrap:wrap}
+main{max-width:1120px;margin:0 auto;padding:18px 16px calc(40px + env(safe-area-inset-bottom,0px))}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);background:var(--s1);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh);margin-bottom:18px;overflow:hidden}
+.stat{padding:16px 20px;border-inline-start:1px solid var(--line)}
+.stat:first-child{border-inline-start:0}
+.stat span{color:var(--mute);font-size:13px;display:flex;align-items:center;gap:7px}
+.stat b{display:block;font-size:28px;line-height:1.3;letter-spacing:-.5px}
+.stat b.l{direction:ltr;text-align:right}
+
+/* panels */
+.box{background:var(--s1);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh);margin-bottom:18px;overflow:hidden}
+.box>header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}
+.box>header h2{margin:0;font-size:16px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chips{display:flex;gap:4px;background:var(--s2);padding:3px;border-radius:12px;border:1px solid var(--line)}
+.chips button{border:0;background:transparent;padding:2px 12px;border-radius:9px;font-size:13px;color:var(--mute);transform:none}
+.chips button.on{background:var(--s1);color:var(--ink);box-shadow:0 2px 8px rgba(30,40,100,.12)}
+#s{width:180px}
+
+/* rows */
+.row{display:grid;grid-template-columns:1.5fr .8fr 1.5fr 1.1fr .7fr auto;gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);transition:background .2s,opacity .25s,transform .25s}
+.row:last-child{border-bottom:0}
+.row:not(.h):hover{background:var(--s2)}
+.row.h{padding-block:9px;color:var(--mute);font-size:12.5px;background:var(--s2)}
+.row.s{grid-template-columns:1.2fr 1fr 1fr 1.3fr 1.3fr auto}
+.row.out{opacity:0;transform:translateX(-28px)}
+.row small,.sub{display:block;color:var(--mute);font-size:12.5px;line-height:1.5}
+.who{display:flex;align-items:center;gap:11px;min-width:0}
+.who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.av{position:relative;flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700}
+.dot{position:absolute;bottom:-3px;inset-inline-start:-3px;width:12px;height:12px;border-radius:50%;background:var(--line);border:2px solid var(--s1)}
+.dot.on{background:var(--ok);animation:pulse 2s infinite}
+.tag{display:inline-block;padding:0 11px;border-radius:99px;font-size:12.5px;color:var(--c);background:color-mix(in srgb,var(--c) 13%,transparent)}
+.tag.ok{--c:var(--ok)}.tag.bad{--c:var(--bad)}.tag.warn{--c:var(--warn)}
+.trk{height:6px;border-radius:4px;background:var(--line);margin-top:5px;overflow:hidden;max-width:230px}
+.trk i{display:block;height:100%;width:var(--p);border-radius:inherit;background:linear-gradient(90deg,var(--acc),var(--acc2));transform-origin:right;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.trk.w i{background:var(--warn)}.trk.b i{background:var(--bad)}
+.first .trk i{animation:fill 1s .2s both cubic-bezier(.2,.8,.2,1)}
+.acts{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.acts button{padding:1px 11px;font-size:13px;border-radius:9px}
+.empty{padding:34px 18px;text-align:center;color:var(--mute)}
+.sk{height:62px;margin:10px 18px;border-radius:12px;background:linear-gradient(100deg,var(--s2) 30%,var(--line) 50%,var(--s2) 70%) 0 0/300% 100%;animation:sh 1.3s infinite linear}
+
+/* motion */
+.enter{animation:rise .55s both cubic-bezier(.2,.8,.2,1);animation-delay:calc(var(--i,0)*45ms)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes fill{from{transform:scaleX(0)}to{transform:none}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 55%,transparent)}70%,100%{box-shadow:0 0 0 8px transparent}}
+@keyframes sh{to{background-position:-300% 0}}
+@keyframes pop{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@keyframes float{50%{transform:translate(24px,-18px) scale(1.08)}}
+
+/* dialogs & toast */
+dialog{border:1px solid var(--line);border-radius:20px;background:var(--s1);color:var(--ink);width:min(430px,94vw);padding:0;box-shadow:0 30px 80px rgba(10,15,50,.35)}
+dialog[open]{animation:pop .32s cubic-bezier(.2,.9,.3,1.1)}
+dialog::backdrop{background:rgba(8,12,35,.5);backdrop-filter:blur(3px);animation:fade .25s}
+dialog .in{padding:20px}
+dialog h3{margin:0 0 4px;font-size:17px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quick{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}.quick button{padding:0 11px;font-size:13px}
+.foot{display:flex;gap:8px;margin-top:20px}
+.derr{color:var(--bad);font-size:13.5px;min-height:22px;margin-top:12px}
+#ts{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:50;display:grid;gap:8px;width:min(92vw,360px)}
+.toast{background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:12px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);animation:rise .35s both;transition:opacity .3s,transform .3s}
+.toast.bad{background:var(--bad);color:#fff}.toast.x{opacity:0;transform:translateY(-10px)}
+
+/* login */
+#login{min-height:100vh;display:grid;place-items:center;padding:20px;position:relative;overflow:hidden}
+#login::before,#login::after{content:"";position:absolute;width:340px;height:340px;border-radius:50%;filter:blur(70px);opacity:.35;animation:float 14s ease-in-out infinite}
+#login::before{background:var(--acc);top:-80px;right:-60px}
+#login::after{background:var(--acc2);bottom:-100px;left:-60px;animation-delay:-7s}
+.lg{position:relative;width:min(350px,100%);background:var(--s1);border:1px solid var(--line);border-radius:22px;padding:26px;box-shadow:var(--sh);animation:pop .6s cubic-bezier(.2,.9,.3,1.1)}
+.lg.shake{animation:shake .4s}
+.lg .logo{width:46px;height:46px;border-radius:14px;margin-bottom:12px}
+#err{color:var(--bad);min-height:26px;font-size:14px;margin-top:8px}
+
+@media(max-width:760px){
+ .stat{padding:12px 12px}.stat b{font-size:21px}
+ .row,.row.s{grid-template-columns:1fr 1fr;gap:10px 12px;padding:15px 16px}
+ .row.h{display:none}
+ .who,.use,.acts{grid-column:1/-1}
+ .acts{justify-content:flex-start}
+ .row>[data-l]::before{content:attr(data-l);display:block;color:var(--mute);font-size:12px}
+ #s{width:100%}.tools{width:100%}.chips{flex:1}.chips button{flex:1;padding-inline:6px}
+}
+@media(prefers-reduced-motion:reduce){*,::before,::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="ts"></div>
+
+<div id="login" hidden>
+  <div class="lg" id="lg">
+    <div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+    <h3 style="font-size:20px;margin:0">ورود به پنل</h3>
+    <span class="sub">مدیریت سرور OpenVPN</span>
+    <label for="lu">نام کاربری</label><input id="lu" autocomplete="username">
+    <label for="lp">رمز عبور</label><input id="lp" type="password" autocomplete="current-password">
+    <div id="err"></div>
+    <button class="p" id="lb" style="width:100%;padding:9px">ورود</button>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <div class="bar-top"><div>
+    <div class="brand"><span class="logo"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></span>OpenVPN</div>
+    <div class="top">
+      <button class="p" onclick="openForm()">+ کاربر جدید</button>
+      <a href="/api/ovpn"><button type="button">فایل .ovpn</button></a>
+      <button onclick="openPw()">رمز پنل</button>
+      <button onclick="theme()" aria-label="تغییر تم">◐</button>
+      <button onclick="out()">خروج</button>
+    </div>
+  </div></div>
+
+  <main id="main" class="first">
+    <section class="stats enter" style="--i:0">
+      <div class="stat"><span>کاربران</span><b id="s1">۰</b></div>
+      <div class="stat"><span><i class="dot on" style="position:static;display:inline-block;width:9px;height:9px;border:0"></i>آنلاین</span><b id="s2">۰</b></div>
+      <div class="stat"><span>مصرف کل</span><b id="s3" class="l">0 MB</b></div>
+    </section>
+
+    <section class="box enter" style="--i:1">
+      <header>
+        <h2>کاربران</h2>
+        <div class="tools">
+          <div class="chips" id="chips">
+            <button class="on" data-f="all">همه</button><button data-f="on">آنلاین</button><button data-f="ok">فعال</button><button data-f="off">غیرفعال</button>
+          </div>
+          <input id="s" placeholder="جستجو…" oninput="render()">
+        </div>
+      </header>
+      <div class="row h"><span>کاربر</span><span>وضعیت</span><span>مصرف</span><span>انقضا</span><span>اتصال</span><span></span></div>
+      <div id="rows"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
+    </section>
+
+    <section class="box enter" style="--i:2">
+      <header><h2>اتصال‌های فعال</h2></header>
+      <div class="row s h"><span>کاربر</span><span>IP</span><span>IP داخلی</span><span>دریافت / ارسال</span><span>زمان اتصال</span><span></span></div>
+      <div id="on"></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="dlg"><div class="in">
+  <h3 id="dt"></h3>
+  <label for="u">نام کاربری</label><input id="u" autocomplete="off" autocapitalize="none">
+  <label for="p">رمز عبور <span id="ph"></span></label><input id="p" autocomplete="new-password">
+  <div class="two">
+    <div><label for="q">سقف حجم (GB)</label><input id="q" type="number" min="0" step="any" placeholder="نامحدود"></div>
+    <div><label for="m">اتصال هم‌زمان</label><input id="m" type="number" min="0" placeholder="۰ = نامحدود"></div>
+  </div>
+  <label for="e">تاریخ انقضا</label><input id="e" type="date">
+  <div class="quick">
+    <button type="button" onclick="addDays(30)">+۳۰ روز</button>
+    <button type="button" onclick="addDays(90)">+۹۰ روز</button>
+    <button type="button" onclick="addDays(365)">+۱ سال</button>
+    <button type="button" onclick="$('#e').value=''">نامحدود</button>
+  </div>
+  <label for="n">یادداشت</label><input id="n" maxlength="200">
+  <div class="derr" role="alert"></div>
+  <div class="foot" style="margin-top:6px"><button class="p" style="flex:1;padding:8px" onclick="save()">ذخیره</button><button onclick="dlg.close()">انصراف</button></div>
+</div></dialog>
+
+<dialog id="cf"><div class="in">
+  <h3 id="cm" style="font-weight:500;line-height:1.8"></h3>
+  <form method="dialog" class="foot"><button id="cok" value="ok" style="flex:1;padding:8px"></button><button value="cancel">انصراف</button></form>
+</div></dialog>
+
+<dialog id="pw"><div class="in">
+  <h3>تغییر رمز پنل</h3>
+  <label for="po">رمز فعلی</label><input id="po" type="password" autocomplete="current-password">
+  <label for="pn">رمز جدید (حداقل ۸ کاراکتر)</label><input id="pn" type="password" autocomplete="new-password">
+  <div class="derr" role="alert"></div>
+  <div class="foot" style="margin-top:6px"><button class="p" style="flex:1;padding:8px" onclick="chpw()">تغییر رمز</button><button onclick="pw.close()">انصراف</button></div>
+</div></dialog>
+
+<script>
+const $=s=>document.querySelector(s),dlg=$('#dlg'),cf=$('#cf'),pw=$('#pw');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const gb=b=>b>=1073741824?(b/1073741824).toFixed(2)+' GB':(b/1048576).toFixed(1)+' MB';
+const fd=d=>d?new Date(d+'T12:00:00').toLocaleDateString('fa-IR'):'نامحدود';
+const ft=t=>new Date(t*1000).toLocaleString('fa-IR');
+const fa=n=>Math.round(n).toLocaleString('fa-IR');
+const hue=s=>[...s].reduce((a,c)=>(a*31+c.charCodeAt(0))%360,7);
+const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+let U=[],O=[],editId=null,F='all',first=true;
+
+function toast(m,k){const t=document.createElement('div');t.className='toast '+(k||'');t.textContent=m;$('#ts').append(t);setTimeout(()=>{t.classList.add('x');setTimeout(()=>t.remove(),320)},2600)}
+function showErr(msg){
+  const d=document.querySelector('dialog[open]:not(#cf)'),e=d&&d.querySelector('.derr');
+  if(e){e.textContent=msg;if(!reduce)e.animate([{transform:'translateX(-7px)'},{transform:'translateX(7px)'},{transform:'none'}],{duration:260})}
+  else toast(msg,'bad');
+}
+async function api(m,u,b){
+  let r,j;
+  try{r=await fetch(u,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});j=await r.json().catch(()=>({}))}
+  catch(e){if(u=='/api/login')$('#err').textContent='ارتباط با سرور برقرار نشد.';else showErr('ارتباط با سرور برقرار نشد.');throw 0}
+  if(r.status==401&&u!='/api/login'){document.querySelectorAll('dialog[open]').forEach(d=>d.close());showLogin();throw 0}
+  if(!r.ok){if(u=='/api/login'){$('#err').textContent=j.error;const l=$('#lg');l.classList.remove('shake');void l.offsetWidth;l.classList.add('shake')}else showErr(j.error||'خطا');throw 0}
+  return j;
+}
+function ask(msg,okText,danger){return new Promise(r=>{$('#cm').textContent=msg;const b=$('#cok');b.textContent=okText;b.className=danger?'solid':'p';cf.returnValue='';cf.onclose=()=>r(cf.returnValue=='ok');cf.showModal()})}
+document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target==d)d.close()}));
+
+function theme(){const r=document.documentElement,dark=r.dataset.theme?r.dataset.theme=='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark';try{localStorage.setItem('th',r.dataset.theme)}catch(e){}}
+try{const t=localStorage.getItem('th');if(t)document.documentElement.dataset.theme=t}catch(e){}
+
+const prev={};
+function cnt(id,v,f){const el=$(id),a=prev[id]||0;prev[id]=v;if(reduce||a==v){el.textContent=f(v);return}
+  const t0=performance.now();(function s(t){const p=Math.min(1,(t-t0)/800),e=1-Math.pow(1-p,3);el.textContent=f(a+(v-a)*e);if(p<1)requestAnimationFrame(s)})(t0)}
+
+function showLogin(){$('#app').hidden=true;$('#login').hidden=false;$('#lu').focus()}
+async function load(){
+  [U,O]=await Promise.all([api('GET','/api/users'),api('GET','/api/online')]);
+  $('#login').hidden=true;$('#app').hidden=false;
+  cnt('#s1',U.length,fa);cnt('#s2',O.length,fa);cnt('#s3',U.reduce((a,u)=>a+u.used,0),gb);
+  render();
+  if(first){first=false;setTimeout(()=>$('#main').classList.remove('first'),1600)}
+}
+const st=u=>!u.enabled?['غیرفعال','bad']:(u.expire&&u.expire<Date.now()/1000)?['منقضی','bad']:(u.quota&&u.used>=u.quota)?['حجم تمام شد','warn']:['فعال','ok'];
+function left(u){if(!u.expire_date)return'بدون محدودیت زمانی';const d=Math.ceil((new Date(u.expire_date+'T23:59:59')-Date.now())/864e5);return d<0?'منقضی شده':d==0?'امروز تمام می‌شود':fa(d)+' روز مانده'}
+$('#chips').onclick=e=>{const b=e.target.closest('button');if(!b)return;F=b.dataset.f;document.querySelectorAll('#chips button').forEach(x=>x.classList.toggle('on',x==b));render()};
+const flt={all:()=>1,on:u=>u.online>0,ok:u=>st(u)[1]=='ok',off:u=>st(u)[1]!='ok'};
+
+function render(){
+  const k=$('#s').value.trim().toLowerCase(),a=first?' enter':'';
+  const L=U.filter(u=>flt[F](u)&&(u.username.toLowerCase().includes(k)||u.note.toLowerCase().includes(k)));
+  $('#rows').innerHTML=L.length?L.map((u,i)=>{
+    const [t,c]=st(u),p=u.quota?Math.min(100,u.used/u.quota*100):0,w=p>=100?'b':p>=85?'w':'';
+    return `<div class="row${a}" style="--i:${Math.min(i,12)+2}" data-id="${u.id}">
+    <div class="who"><span class="av" style="background:hsl(${hue(u.username)} 58% 52%)">${esc(u.username[0].toUpperCase())}<i class="dot${u.online?' on':''}"></i></span><div style="min-width:0"><b>${esc(u.username)}</b><small>${esc(u.note)||'—'}</small></div></div>
+    <div data-l="وضعیت"><span class="tag ${c}">${t}</span></div>
+    <div class="use" data-l="مصرف"><span class="num">${gb(u.used)} / ${u.quota?gb(u.quota):'∞'}</span>${u.quota?`<div class="trk ${w}"><i style="--p:${p}%"></i></div>`:''}</div>
+    <div data-l="انقضا">${fd(u.expire_date)}<small>${left(u)}</small></div>
+    <div data-l="اتصال" class="num">${u.online} / ${u.max_conn||'∞'}</div>
+    <div class="acts"><button onclick="openForm(${u.id})">ویرایش</button><button onclick="tog(${u.id},${u.enabled?0:1})">${u.enabled?'غیرفعال':'فعال'}</button><button onclick="rst(${u.id})">صفر کردن حجم</button><button class="d" onclick="del(${u.id})">حذف</button></div></div>`}).join('')
+    :`<div class="empty">${U.length?'کاربری با این فیلتر پیدا نشد.':'هنوز کاربری ندارید. با «+ کاربر جدید» اولین کاربر را بسازید.'}</div>`;
+  $('#on').innerHTML=O.length?O.map(s=>`<div class="row s">
+    <div class="who"><b>${esc(s.user)}</b></div><div data-l="IP" class="num">${esc(s.ip)}</div><div data-l="IP داخلی" class="num">${esc(s.vip)}</div>
+    <div data-l="دریافت / ارسال" class="num">${gb(s.rx)} / ${gb(s.tx)}</div><div data-l="زمان اتصال">${ft(s.since)}</div>
+    <div class="acts"><button class="d" onclick="kick(${s.cid})">قطع اتصال</button></div></div>`).join('')
+    :'<div class="empty">اتصال فعالی وجود ندارد.</div>';
+}
+
+function openForm(id){
+  editId=id||null;const u=U.find(x=>x.id==id)||{};document.querySelectorAll('.derr').forEach(e=>e.textContent='');
+  $('#dt').textContent=id?'ویرایش '+u.username:'کاربر جدید';
+  $('#u').value=u.username||'';$('#u').disabled=!!id;
+  $('#p').value='';$('#ph').textContent=id?'(خالی = بدون تغییر)':'';
+  $('#q').value=u.quota?+(u.quota/1073741824).toFixed(3):'';
+  $('#m').value=id?u.max_conn:1;$('#e').value=u.expire_date||'';$('#n').value=u.note||'';
+  dlg.showModal();
+}
+function addDays(n){
+  let b=$('#e').value?new Date($('#e').value+'T12:00:00'):new Date();
+  if(b<new Date())b=new Date();
+  b.setDate(b.getDate()+n);$('#e').value=b.toLocaleDateString('en-CA');
+}
+async function save(){
+  const d={quota_gb:$('#q').value||0,expire:$('#e').value,max_conn:$('#m').value||0,note:$('#n').value};
+  if($('#p').value)d.password=$('#p').value;
+  if(editId)await api('PUT','/api/users/'+editId,d);
+  else{d.username=$('#u').value.trim();await api('POST','/api/users',d)}
+  dlg.close();toast(editId?'تغییرات ذخیره شد':'کاربر ساخته شد');load();
+}
+const tog=async(i,v)=>{await api('PUT','/api/users/'+i,{enabled:v});toast(v?'کاربر فعال شد':'کاربر غیرفعال شد');load()};
+const rst=async i=>{if(await ask('مصرف این کاربر صفر شود؟','صفر کن')){await api('POST','/api/users/'+i+'/reset');toast('مصرف صفر شد');load()}};
+const del=async i=>{if(await ask('این کاربر برای همیشه حذف شود؟','حذف کن',1)){await api('DELETE','/api/users/'+i);const r=document.querySelector(`.row[data-id="${i}"]`);if(r)r.classList.add('out');setTimeout(()=>{toast('کاربر حذف شد');load()},reduce?0:260)}};
+const kick=async c=>{await api('POST','/api/kill/'+c);toast('اتصال قطع شد');setTimeout(load,600)};
+function openPw(){$('#po').value=$('#pn').value='';document.querySelectorAll('.derr').forEach(e=>e.textContent='');pw.showModal()}
+async function chpw(){await api('POST','/api/admin',{old:$('#po').value,new:$('#pn').value});pw.close();toast('رمز پنل تغییر کرد')}
+async function out(){await api('POST','/api/logout');showLogin()}
+$('#lb').onclick=async()=>{$('#err').textContent='';await api('POST','/api/login',{u:$('#lu').value,p:$('#lp').value});$('#lp').value='';first=true;$('#main').classList.add('first');load()};
+$('#lp').onkeydown=e=>{if(e.key=='Enter')$('#lb').click()};
+$('#lu').onkeydown=e=>{if(e.key=='Enter')$('#lp').focus()};
+load().catch(()=>{});
+setInterval(()=>{if(!$('#app').hidden&&!document.hidden&&!document.querySelector('dialog[open]'))load().catch(()=>{})},10000);
+</script>
+</body>
+</html>
